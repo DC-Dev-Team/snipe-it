@@ -28,7 +28,9 @@ class MigrationCartalystSentryInstallUsersGroupsPivot extends Migration
      */
     public function up()
     {
+
         Schema::create('users_groups', function ($table) {
+          \Illuminate\Support\Facades\DB::statement('SET SESSION sql_require_primary_key=0');
             $table->integer('user_id')->unsigned();
             $table->integer('group_id')->unsigned();
 

@@ -1,144 +1,89 @@
-FROM ubuntu:22.04
-LABEL maintainer="Brady Wetherington <bwetherington@grokability.com>"
-
-# No need to add `apt-get clean` here, reference:
-# - https://github.com/snipe/snipe-it/pull/9201
-# - https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#apt-get
-
-RUN export DEBIAN_FRONTEND=noninteractive; \
-    export DEBCONF_NONINTERACTIVE_SEEN=true; \
-    echo 'tzdata tzdata/Areas select Etc' | debconf-set-selections; \
-    echo 'tzdata tzdata/Zones/Etc select UTC' | debconf-set-selections; \
-    apt-get update -qqy \
- && apt-get install -qqy --no-install-recommends \
-apt-utils \
-apache2 \
-apache2-bin \
-libapache2-mod-php8.1 \
-php8.1-curl \
-php8.1-ldap \
-php8.1-mysql \
-php8.1-gd \
-php8.1-xml \
-php8.1-mbstring \
-php8.1-zip \
-php8.1-bcmath \
-php8.1-redis \
-php-memcached \
-patch \
-curl \
-wget  \
-vim \
-git \
-cron \
-mysql-client \
-supervisor \
-cron \
-gcc \
-make \
-autoconf \
-libc-dev \
-libldap-common \
-pkg-config \
-libmcrypt-dev \
-php8.1-dev \
-ca-certificates \
-unzip \
-dnsutils \
-&& rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-
-RUN curl -L -O https://github.com/pear/pearweb_phars/raw/master/go-pear.phar
-RUN php go-pear.phar
-
-RUN pecl install mcrypt
-
-RUN bash -c "echo extension=/usr/lib/php/20210902/mcrypt.so > /etc/php/8.1/mods-available/mcrypt.ini"
-
-RUN phpenmod mcrypt
-RUN phpenmod gd
-RUN phpenmod bcmath
-
-RUN sed -i 's/variables_order = .*/variables_order = "EGPCS"/' /etc/php/8.1/apache2/php.ini
-RUN sed -i 's/variables_order = .*/variables_order = "EGPCS"/' /etc/php/8.1/cli/php.ini
-
-RUN useradd -m --uid 1000 --gid 50 docker
-
-RUN echo export APACHE_RUN_USER=docker >> /etc/apache2/envvars
-RUN echo export APACHE_RUN_GROUP=staff >> /etc/apache2/envvars
-
-COPY docker/000-default.conf /etc/apache2/sites-enabled/000-default.conf
-
-#SSL
-RUN mkdir -p /var/lib/snipeit/ssl
-#COPY docker/001-default-ssl.conf /etc/apache2/sites-enabled/001-default-ssl.conf
-COPY docker/001-default-ssl.conf /etc/apache2/sites-available/001-default-ssl.conf
-
-RUN a2enmod ssl
-RUN a2ensite 001-default-ssl.conf
-
-COPY . /var/www/html
-
-RUN a2enmod rewrite
+FROM alpine:3.17.3
+# Apache + PHP
+RUN  apk add --no-cache \
+        apache2 \
+        php81 \
+        php81-common \
+        php81-apache2 \
+        php81-curl \
+        php81-ldap \
+        php81-mysqli \
+        php81-gd \
+        php81-xml \
+        php81-mbstring \
+        php81-zip \
+        php81-ctype \
+        php81-tokenizer \
+        php81-pdo_mysql \
+        php81-openssl \
+        php81-bcmath \
+        php81-phar \
+        php81-json \
+        php81-iconv \
+        php81-fileinfo \
+        php81-simplexml \
+        php81-session \
+        php81-dom \
+        php81-xmlwriter \
+        php81-xmlreader \
+        php81-sodium \
+        php81-redis \
+        php81-pecl-memcached \
+        curl \
+        wget \
+        vim \
+        git \
+        mysql-client \
+        tini
 
 COPY docker/column-statistics.cnf /etc/mysql/conf.d/column-statistics.cnf
 
-############ INITIAL APPLICATION SETUP #####################
+# Where apache's PID lives
+RUN mkdir -p /run/apache2 && chown apache:apache /run/apache2
+
+RUN sed -i 's/variables_order = .*/variables_order = "EGPCS"/' /etc/php81/php.ini
+COPY  docker/000-default-2.4.conf /etc/apache2/conf.d/default.conf
+
+# Enable mod_rewrite
+RUN sed -i '/LoadModule rewrite_module/s/^#//g' /etc/apache2/httpd.conf
+
+COPY . /var/www/html
 
 WORKDIR /var/www/html
 
-#Append to bootstrap file (less brittle than 'patch')
-# RUN sed -i 's/return $app;/$env="production";\nreturn $app;/' bootstrap/start.php
-
-#copy all configuration files
-# COPY docker/*.php /var/www/html/app/config/production/
 COPY docker/docker.env /var/www/html/.env
 
-RUN chown -R docker /var/www/html
+RUN chown -R apache:apache /var/www/html
 
 RUN \
-	rm -r "/var/www/html/storage/private_uploads" && ln -fs "/var/lib/snipeit/data/private_uploads" "/var/www/html/storage/private_uploads" \
-      && rm -rf "/var/www/html/public/uploads" && ln -fs "/var/lib/snipeit/data/uploads" "/var/www/html/public/uploads" \
-      && rm -r "/var/www/html/storage/app/backups" && ln -fs "/var/lib/snipeit/dumps" "/var/www/html/storage/app/backups" \
-      && mkdir -p "/var/lib/snipeit/keys" && ln -fs "/var/lib/snipeit/keys/oauth-private.key" "/var/www/html/storage/oauth-private.key" \
-      && ln -fs "/var/lib/snipeit/keys/oauth-public.key" "/var/www/html/storage/oauth-public.key" \
-      && ln -fs "/var/lib/snipeit/keys/ldap_client_tls.cert" "/var/www/html/storage/ldap_client_tls.cert" \
-      && ln -fs "/var/lib/snipeit/keys/ldap_client_tls.key" "/var/www/html/storage/ldap_client_tls.key" \
-      && chown docker "/var/lib/snipeit/keys/" \
-      && chown -h docker "/var/www/html/storage/" \
-      && chmod +x /var/www/html/artisan \
-      && echo "Finished setting up application in /var/www/html"
+	rm -r "/var/www/html/storage/private_uploads" \
+	&& mkdir -p "/var/lib/snipeit/data/private_uploads" && ln -fs "/var/lib/snipeit/data/private_uploads" "/var/www/html/storage/private_uploads" \
+    && rm -rf "/var/www/html/public/uploads" \
+    && mkdir -p "/var/lib/snipeit/data/uploads" && ln -fs "/var/lib/snipeit/data/uploads" "/var/www/html/public/uploads" \
+    && mkdir -p "/var/lib/snipeit/dumps" && rm -r "/var/www/html/storage/app/backups" && ln -fs "/var/lib/snipeit/dumps" "/var/www/html/storage/app/backups" \
+    && mkdir -p "/var/lib/snipeit/keys" && ln -fs "/var/lib/snipeit/keys/oauth-private.key" "/var/www/html/storage/oauth-private.key" \
+    && ln -fs "/var/lib/snipeit/keys/oauth-public.key" "/var/www/html/storage/oauth-public.key" \
+    && chown -hR apache "/var/www/html/storage/" \
+    && chown -R apache "/var/lib/snipeit"
 
-############## DEPENDENCIES via COMPOSER ###################
-
-#global install of composer
+# Install composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+RUN mkdir -p /var/www/.composer && chown apache /var/www/.composer
 
-# Get dependencies
-USER docker
-RUN composer install --no-dev --working-dir=/var/www/html
+# Install dependencies
+USER apache
+RUN COMPOSER_CACHE_DIR=/dev/null composer install --no-dev --working-dir=/var/www/html
+
 USER root
-
-############### APPLICATION INSTALL/INIT #################
-
-#RUN php artisan app:install
-# too interactive! Try something else
-
-#COPY docker/app_install.exp /tmp/app_install.exp
-#RUN chmod +x /tmp/app_install.exp
-#RUN /tmp/app_install.exp
-
-############### DATA VOLUME #################
 
 VOLUME ["/var/lib/snipeit"]
 
-##### START SERVER
+# Entrypoints
+COPY docker/entrypoint_alpine.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-COPY docker/startup.sh docker/supervisord.conf /
-COPY docker/supervisor-exit-event-listener /usr/bin/supervisor-exit-event-listener
-RUN chmod +x /startup.sh /usr/bin/supervisor-exit-event-listener
+ENTRYPOINT ["/sbin/tini", "--"]
 
-CMD ["/startup.sh"]
+CMD ["/entrypoint.sh"]
 
 EXPOSE 80
-EXPOSE 443
