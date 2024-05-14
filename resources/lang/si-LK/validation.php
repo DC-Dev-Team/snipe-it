@@ -90,11 +90,13 @@ return [
     ],
     'string'               => 'The :attribute must be a string.',
     'timezone'             => 'The :attribute must be a valid zone.',
+    'two_column_unique_undeleted' => 'The :attribute must be unique across :table1 and :table2. ',
     'unique'               => 'The :attribute has already been taken.',
     'uploaded'             => 'The :attribute failed to upload.',
     'url'                  => 'The :attribute format is invalid.',
     'unique_undeleted'     => 'The :attribute must be unique.',
     'non_circular'         => 'The :attribute must not create a circular reference.',
+    'not_array'            => ':attribute cannot be an array.',
     'disallow_same_pwd_as_user_fields' => 'Password cannot be the same as the username.',
     'letters'              => 'Password must contain at least one letter.',
     'numbers'              => 'Password must contain at least one number.',
@@ -103,6 +105,8 @@ return [
     'gte'                  => [
         'numeric'          => 'Value cannot be negative'
     ],
+    'checkboxes'           => ':attribute contains invalid options.',
+    'radio_buttons'        => ':attribute is invalid.',
 
 
     /*
@@ -149,4 +153,10 @@ return [
 
     'attributes' => [],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Generic Validation Messages
+    |--------------------------------------------------------------------------
+    */
+    'invalid_value_in_field' => 'Invalid value included in this field',
 ];

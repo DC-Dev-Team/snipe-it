@@ -21,10 +21,11 @@ class UsersTransformer
 
     public function transformUser(User $user)
     {
+
         $array = [
                 'id' => (int) $user->id,
                 'avatar' => e($user->present()->gravatar),
-                'name' => e($user->first_name).' '.e($user->last_name),
+                'name' => e($user->getFullNameAttribute()),
                 'first_name' => e($user->first_name),
                 'last_name' => e($user->last_name),
                 'username' => e($user->username),
@@ -64,6 +65,8 @@ class UsersTransformer
                 'licenses_count' => (int) $user->licenses_count,
                 'accessories_count' => (int) $user->accessories_count,
                 'consumables_count' => (int) $user->consumables_count,
+                'manages_users_count' => (int) $user->manages_users_count,
+                'manages_locations_count' => (int) $user->manages_locations_count,
                 'company' => ($user->company) ? ['id' => (int) $user->company->id, 'name'=> e($user->company->name)] : null,
                 'created_by' => ($user->createdBy) ? [
                     'id' => (int) $user->createdBy->id,
@@ -79,7 +82,7 @@ class UsersTransformer
 
         $permissions_array['available_actions'] = [
             'update' => (Gate::allows('update', User::class) && ($user->deleted_at == '')),
-            'delete' => (Gate::allows('delete', User::class) && ($user->assets_count == 0) && ($user->licenses_count == 0) && ($user->accessories_count == 0)),
+            'delete' => $user->isDeletable(),
             'clone' => (Gate::allows('create', User::class) && ($user->deleted_at == '')),
             'restore' => (Gate::allows('create', User::class) && ($user->deleted_at != '')),
         ];

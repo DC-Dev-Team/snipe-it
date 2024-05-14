@@ -191,17 +191,12 @@ $(document).ready(function () {
      * Select2
      */
 
-     var iOS = /iPhone|iPad|iPod/.test(navigator.userAgent)  && !window.MSStream;
-     if(!iOS)
-     {
-        // Vue collision: Avoid overriding a vue select2 instance
-        // by checking to see if the item has already been select2'd.
         $('select.select2:not(".select2-hidden-accessible")').each(function (i,obj) {
             {
                 $(obj).select2();
             }
         });
-     }
+
 
     // $('.datepicker').datepicker();
     // var datepicker = $.fn.datepicker.noConflict(); // return $.fn.datepicker to previously assigned value
@@ -454,12 +449,18 @@ $(document).ready(function () {
                 $('#assigned_location').hide();
                 $('.notification-callout').fadeOut();
 
+                $('[name="assigned_location"]').val('').trigger('change.select2');
+                $('[name="assigned_user"]').val('').trigger('change.select2');
+
             } else if (assignto_type == 'location') {
                 $('#current_assets_box').fadeOut();
                 $('#assigned_asset').hide();
                 $('#assigned_user').hide();
                 $('#assigned_location').show();
                 $('.notification-callout').fadeOut();
+
+                $('[name="assigned_asset"]').val('').trigger('change.select2');
+                $('[name="assigned_user"]').val('').trigger('change.select2');
             } else  {
 
                 $('#assigned_asset').hide();
@@ -470,6 +471,8 @@ $(document).ready(function () {
                 }
                 $('.notification-callout').fadeIn();
 
+                $('[name="assigned_asset"]').val('').trigger('change.select2');
+                $('[name="assigned_location"]').val('').trigger('change.select2');
             }
         });
     });

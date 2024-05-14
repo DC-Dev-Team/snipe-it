@@ -90,11 +90,13 @@ return [
     ],
     'string'               => ':attribute haruslah sebuah string.',
     'timezone'             => ':attribute haruslah sebuah zone yang valid.',
+    'two_column_unique_undeleted' => 'The :attribute must be unique across :table1 and :table2. ',
     'unique'               => ':attribute sudah pernah digunakan.',
     'uploaded'             => ':attribute gagal di-upload.',
     'url'                  => 'Format :attribute tidaklah benar.',
     'unique_undeleted'     => ':attribute haruslah unik.',
     'non_circular'         => 'The :attribute must not create a circular reference.',
+    'not_array'            => ':attribute cannot be an array.',
     'disallow_same_pwd_as_user_fields' => 'Password cannot be the same as the username.',
     'letters'              => 'Password must contain at least one letter.',
     'numbers'              => 'Password must contain at least one number.',
@@ -103,6 +105,8 @@ return [
     'gte'                  => [
         'numeric'          => 'Value cannot be negative'
     ],
+    'checkboxes'           => ':attribute contains invalid options.',
+    'radio_buttons'        => ':attribute is invalid.',
 
 
     /*
@@ -149,4 +153,10 @@ return [
 
     'attributes' => [],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Generic Validation Messages
+    |--------------------------------------------------------------------------
+    */
+    'invalid_value_in_field' => 'Invalid value included in this field',
 ];

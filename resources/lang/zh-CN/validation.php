@@ -90,11 +90,13 @@ return [
     ],
     'string'               => '：属性必须是字符串。',
     'timezone'             => '：属性必须是有效区域。',
+    'two_column_unique_undeleted' => ':attribute 在 :table1 和 :table2 中必须是唯一的。 ',
     'unique'               => ':attribute 已经被采用',
     'uploaded'             => '：属性无法上传。',
     'url'                  => ':attribute 格式无效',
     'unique_undeleted'     => ':attribute 属性必须唯一。',
     'non_circular'         => ':attribute 不能创建循环引用。',
+    'not_array'            => ':attribute 不能是一个数组。',
     'disallow_same_pwd_as_user_fields' => '密码不能和用户名相同。',
     'letters'              => '密码必须包含至少一个字母。',
     'numbers'              => '密码必须包含至少一个数字。',
@@ -103,6 +105,8 @@ return [
     'gte'                  => [
         'numeric'          => '数值不能为负数'
     ],
+    'checkboxes'           => ':attribute 包含无效的选项。',
+    'radio_buttons'        => ':attribute 无效。',
 
 
     /*
@@ -149,4 +153,10 @@ return [
 
     'attributes' => [],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Generic Validation Messages
+    |--------------------------------------------------------------------------
+    */
+    'invalid_value_in_field' => '此字段中包含的值无效',
 ];

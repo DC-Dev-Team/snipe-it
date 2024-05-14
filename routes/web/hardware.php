@@ -50,26 +50,10 @@ Route::group(
             [AssetsController::class, 'dueForAudit']
         )->name('assets.audit.due');
 
-        Route::get('audit/overdue',
-            [AssetsController::class, 'overdueForAudit']
-        )->name('assets.audit.overdue');
-
-        Route::get('audit/due',
-            [AssetsController::class, 'dueForAudit']
-        )->name('assets.audit.due');
-
-        Route::get('audit/overdue',
-            [AssetsController::class, 'overdueForAudit']
-        )->name('assets.audit.overdue');
-
-        Route::get('audit/due',
-            [AssetsController::class, 'dueForAudit']
-        )->name('assets.audit.due');
-
-        Route::get('audit/overdue',
-            [AssetsController::class, 'overdueForAudit']
-        )->name('assets.audit.overdue');
-
+        Route::get('checkins/due',
+            [AssetsController::class, 'dueForCheckin']
+        )->name('assets.checkins.due');
+        
         Route::get('audit/{id}',
             [AssetsController::class, 'audit']
         )->name('asset.audit.create');
@@ -122,9 +106,10 @@ Route::group(
             [AssetCheckinController::class, 'store']
         )->name('hardware.checkin.store');
 
-        Route::get('{assetId}/view',
-            [AssetsController::class, 'show']
-        )->name('hardware.view');
+        // Redirect old legacy /asset_id/view urls to the resource route version
+        Route::get('{assetId}/view', function ($assetId) {
+            return redirect()->route('hardware.show', ['hardware' => $assetId]);
+        });
 
         Route::get('{assetId}/qr_code', 
             [AssetsController::class, 'getQrCode']
@@ -178,12 +163,20 @@ Route::group(
         Route::post('bulkcheckout',
             [BulkAssetsController::class, 'storeCheckout']
         )->name('hardware.bulkcheckout.store');
+
     });
 
 Route::resource('hardware', 
         AssetsController::class, 
         [
             'middleware' => ['auth'],
-            'parameters' => ['asset' => 'asset_id'
+            'parameters' => ['asset' => 'asset_id',
+                'names' => [
+                    'show' => 'view',
+                ],
         ],
 ]);
+
+Route::get('ht/{any?}',
+    [AssetsController::class, 'getAssetByTag']
+)->where('any', '.*')->name('ht/assetTag');

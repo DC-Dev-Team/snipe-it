@@ -110,6 +110,7 @@ class CustomFieldsController extends Controller
             "display_in_user_view" => $display_in_user_view,
             "auto_add_to_fieldsets" => $request->get("auto_add_to_fieldsets", 0),
             "show_in_listview" => $request->get("show_in_listview", 0),
+            "show_in_requestable_list" => $request->get("show_in_requestable_list", 0),
             "user_id" => Auth::id()
         ]);
 
@@ -259,7 +260,7 @@ class CustomFieldsController extends Controller
         
         $field->name          = trim(e($request->get("name")));
         $field->element       = e($request->get("element"));
-        $field->field_values  = e($request->get("field_values"));
+        $field->field_values  = $request->get("field_values");
         $field->user_id       = Auth::id();
         $field->help_text     = $request->get("help_text");
         $field->show_in_email = $show_in_email;
@@ -267,6 +268,7 @@ class CustomFieldsController extends Controller
         $field->display_in_user_view = $display_in_user_view;
         $field->auto_add_to_fieldsets = $request->get("auto_add_to_fieldsets", 0);
         $field->show_in_listview = $request->get("show_in_listview", 0);
+        $field->show_in_requestable_list = $request->get("show_in_requestable_list", 0);
 
         if ($request->get('format') == 'CUSTOM REGEX') {
             $field->format = e($request->get('custom_format'));

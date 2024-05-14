@@ -25,7 +25,7 @@ class CompanyPresenter extends Presenter
                 'field' => 'name',
                 'searchable' => true,
                 'sortable' => true,
-                'switchable' => true,
+                'switchable' => false,
                 'title' => trans('admin/companies/table.name'),
                 'visible' => true,
                 'formatter' => 'companiesLinkFormatter',
@@ -45,6 +45,14 @@ class CompanyPresenter extends Presenter
                 'title' => trans('admin/suppliers/table.fax'),
                 'visible' => false,
                 'formatter'    => 'phoneFormatter',
+            ], [
+                'field' => 'email',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('admin/suppliers/table.email'),
+                'visible' => true,
+				'formatter' => 'emailFormatter',
             ], [
                 'field' => 'image',
                 'searchable' => false,

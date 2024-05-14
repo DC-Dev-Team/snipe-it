@@ -7,6 +7,7 @@ use App\Helpers\StorageHelper;
 use App\Http\Requests\ImageUploadRequest;
 use App\Http\Requests\SettingsSamlRequest;
 use App\Http\Requests\SetupUserRequest;
+use App\Models\CustomField;
 use App\Models\Group;
 use App\Models\Setting;
 use App\Models\Asset;
@@ -19,6 +20,7 @@ use DB;
 use enshrined\svgSanitize\Sanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Image;
 use Input;
 use Redirect;
@@ -26,7 +28,8 @@ use Response;
 use App\Http\Requests\SlackSettingsRequest;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Artisan;
-use Validator;
+use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 /**
  * This controller handles all actions related to Settings for
@@ -185,7 +188,7 @@ class SettingsController extends Controller
         $settings->alerts_enabled = 1;
         $settings->pwd_secure_min = 10;
         $settings->brand = 1;
-        $settings->locale = $request->input('locale', 'en');
+        $settings->locale = $request->input('locale', 'en-US');
         $settings->default_currency = $request->input('default_currency', 'USD');
         $settings->user_id = 1;
         $settings->email_domain = $request->input('email_domain');
@@ -355,6 +358,7 @@ class SettingsController extends Controller
         }
 
         $setting->default_eula_text = $request->input('default_eula_text');
+        $setting->load_remote = $request->input('load_remote', 0);
         $setting->thumbnail_max_h = $request->input('thumbnail_max_h');
         $setting->privacy_policy_link = $request->input('privacy_policy_link');
 
@@ -419,68 +423,46 @@ class SettingsController extends Controller
 
         // Only allow the site name and CSS to be changed if lock_passwords is false
         // Because public demos make people act like dicks
+
         if (! config('app.lock_passwords')) {
             $setting->site_name = $request->input('site_name');
             $setting->custom_css = $request->input('custom_css');
-        }
+            $setting = $request->handleImages($setting, 600, 'logo', '', 'logo');
 
-        $setting = $request->handleImages($setting, 600, 'logo', '', 'logo');
-
-        if ('1' == $request->input('clear_logo')) {
+            if ('1' == $request->input('clear_logo')) {
                 Storage::disk('public')->delete($setting->logo);
-            $setting->logo = null;
+                $setting->logo = null;
                 $setting->brand = 1;
-        }
-
-
-        $setting = $request->handleImages($setting, 600, 'email_logo', '', 'email_logo');
-
-
-       if ('1' == $request->input('clear_email_logo')) {
-            Storage::disk('public')->delete($setting->email_logo);
-            $setting->email_logo = null;
-            // If they are uploading an image, validate it and upload it
-        }
-
-
-        $setting = $request->handleImages($setting, 600, 'label_logo', '', 'label_logo');
-
-
-        if ('1' == $request->input('clear_label_logo')) {
-            Storage::disk('public')->delete($setting->label_logo);
-            $setting->label_logo = null;
-        }
-
-
-        // If the user wants to clear the favicon...
-         if ($request->hasFile('favicon')) {
-            $favicon_image = $favicon_upload = $request->file('favicon');
-            $favicon_ext = $favicon_image->getClientOriginalExtension();
-            $setting->favicon = $favicon_file_name = 'favicon-uploaded.'.$favicon_ext;
-
-            if (($favicon_image->getClientOriginalExtension() != 'ico') && ($favicon_image->getClientOriginalExtension() != 'svg')) {
-                $favicon_upload = Image::make($favicon_image->getRealPath())->resize(null, 36, function ($constraint) {
-                    $constraint->aspectRatio();
-                    $constraint->upsize();
-                });
-
-                // This requires a string instead of an object, so we use ($string)
-                Storage::disk('public')->put($favicon_file_name, (string) $favicon_upload->encode());
-            } else {
-                Storage::disk('public')->put($favicon_file_name, file_get_contents($request->file('favicon')));
             }
 
 
-            // Remove Current image if exists
-            if (($setting->favicon) && (file_exists($favicon_file_name))) {
-                Storage::disk('public')->delete($favicon_file_name);
-            }
-        } elseif ('1' == $request->input('clear_favicon')) {
-             Storage::disk('public')->delete($setting->clear_favicon);
-            $setting->favicon = null;
+            $setting = $request->handleImages($setting, 600, 'email_logo', '', 'email_logo');
 
-             // If they are uploading an image, validate it and upload it
-         }
+
+            if ('1' == $request->input('clear_email_logo')) {
+                Storage::disk('public')->delete($setting->email_logo);
+                $setting->email_logo = null;
+                // If they are uploading an image, validate it and upload it
+            }
+
+
+            $setting = $request->handleImages($setting, 600, 'label_logo', '', 'label_logo');
+
+            if ('1' == $request->input('clear_label_logo')) {
+                Storage::disk('public')->delete($setting->label_logo);
+                $setting->label_logo = null;
+            }
+
+
+            $setting = $request->handleImages($setting, 600, 'favicon', '', 'favicon');
+
+            // If the user wants to clear the favicon...
+            if ('1' == $request->input('clear_favicon')) {
+                Storage::disk('public')->delete($setting->favicon);
+                $setting->favicon = null;
+            }
+
+        }
 
         if ($setting->save()) {
             return redirect()->route('settings.index')
@@ -518,6 +500,19 @@ class SettingsController extends Controller
      */
     public function postSecurity(Request $request)
     {
+        $this->validate($request, [
+            'pwd_secure_complexity' => 'array',
+            'pwd_secure_complexity.*' => [
+                Rule::in([
+                    'disallow_same_pwd_as_user_fields',
+                    'letters',
+                    'numbers',
+                    'symbols',
+                    'case_diff',
+                ])
+            ]
+        ]);
+
         if (is_null($setting = Setting::getSettings())) {
             return redirect()->to('admin')->with('error', trans('admin/settings/message.update.error'));
         }
@@ -584,12 +579,13 @@ class SettingsController extends Controller
         }
 
         if (! config('app.lock_passwords')) {
-            $setting->locale = $request->input('locale', 'en');
+            $setting->locale = $request->input('locale', 'en-US');
         }
         $setting->default_currency = $request->input('default_currency', '$');
         $setting->date_display_format = $request->input('date_display_format');
         $setting->time_display_format = $request->input('time_display_format');
         $setting->digit_separator = $request->input('digit_separator');
+        $setting->name_display_format = $request->input('name_display_format');
 
         if ($setting->save()) {
             return redirect()->route('settings.index')
@@ -633,21 +629,21 @@ class SettingsController extends Controller
         // Check if the audit interval has changed - if it has, we want to update ALL of the assets audit dates
         if ($request->input('audit_interval') != $setting->audit_interval) {
 
-            // Be careful - this could be a negative number
+            // This could be a negative number if the user is trying to set the audit interval to a lower number than it was before
             $audit_diff_months = ((int)$request->input('audit_interval') - (int)($setting->audit_interval));
+
+            // Batch update the dates. We have to use this method to avoid time limit exceeded errors on very large datasets,
+            // but it DOES mean this change doesn't get logged in the action logs, since it skips the observer.
+            // @see https://stackoverflow.com/questions/54879160/laravel-observer-not-working-on-bulk-insert
+            $affected = Asset::whereNotNull('next_audit_date')
+                ->whereNull('deleted_at')
+                ->update(
+                    ['next_audit_date' => DB::raw('DATE_ADD(next_audit_date, INTERVAL '.$audit_diff_months.' MONTH)')]
+            );
+
+            \Log::debug($affected .' assets affected by audit interval update');
+
             
-            // Grab all of the assets that have an existing next_audit_date
-            $assets = Asset::whereNotNull('next_audit_date')->get();
-
-            // Update all of the assets' next_audit_date values
-            foreach ($assets as $asset) {
-
-                if ($asset->next_audit_date != '') {
-                    $old_next_audit = new \DateTime($asset->next_audit_date);
-                    $asset->next_audit_date = $old_next_audit->modify($audit_diff_months.' month')->format('Y-m-d');
-                    $asset->forceSave();
-                }
-            }
         }
 
         $alert_email = rtrim($request->input('alert_email'), ',');
@@ -808,9 +804,9 @@ class SettingsController extends Controller
      */
     public function getLabels()
     {
-        $setting = Setting::getSettings();
-
-        return view('settings.labels', compact('setting'));
+        return view('settings.labels')
+            ->with('setting', Setting::getSettings())
+            ->with('customFields', CustomField::where('field_encrypted', '=', 0)->get());
     }
 
     /**
@@ -827,6 +823,14 @@ class SettingsController extends Controller
         if (is_null($setting = Setting::getSettings())) {
             return redirect()->to('admin')->with('error', trans('admin/settings/message.update.error'));
         }
+        $setting->label2_enable = $request->input('label2_enable');
+        $setting->label2_template = $request->input('label2_template');
+        $setting->label2_title = $request->input('label2_title');
+        $setting->label2_asset_logo = $request->input('label2_asset_logo');
+        $setting->label2_1d_type = $request->input('label2_1d_type');
+        $setting->label2_2d_type = $request->input('label2_2d_type');
+        $setting->label2_2d_target = $request->input('label2_2d_target');
+        $setting->label2_fields = $request->input('label2_fields');
         $setting->labels_per_page = $request->input('labels_per_page');
         $setting->labels_width = $request->input('labels_width');
         $setting->labels_height = $request->input('labels_height');
@@ -875,7 +879,7 @@ class SettingsController extends Controller
         }
 
         if ($setting->save()) {
-            return redirect()->route('settings.index')
+            return redirect()->route('settings.labels.index')
                 ->with('success', trans('admin/settings/message.update.success'));
         }
 
@@ -1239,13 +1243,11 @@ class SettingsController extends Controller
             if (!$request->hasFile('file')) {
                 return redirect()->route('settings.backups.index')->with('error', 'No file uploaded');
             } else {
+
                 $max_file_size = Helper::file_upload_max_size();
-
-                $rules = [
+                $validator = Validator::make($request->all(), [
                     'file' => 'required|mimes:zip|max:'.$max_file_size,
-                ];
-
-                $validator = \Validator::make($request->all(), $rules);
+                ]);
 
                 if ($validator->passes()) {
 
@@ -1256,7 +1258,7 @@ class SettingsController extends Controller
                         return redirect()->route('settings.backups.index')->with('success', 'File uploaded');
                 }
 
-                return redirect()->route('settings.backups.index')->withErrors($request->getErrors());
+                return redirect()->route('settings.backups.index')->withErrors($validator);
 
             }
 

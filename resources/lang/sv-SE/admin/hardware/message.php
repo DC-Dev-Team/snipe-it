@@ -10,6 +10,7 @@ return [
     'create' => [
         'error'   		=> 'Tillgången skapades inte, försök igen. :(',
         'success' 		=> 'Asset skapades framgångsrikt. :)',
+        'success_linked' => 'Tillgången med taggen :tag har skapats. <strong><a href=":link" style="color: white;">Klicka här för att se</a></strong>.',
     ],
 
     'update' => [
@@ -17,6 +18,7 @@ return [
         'success' 			=> 'Asset uppdaterad framgångsrikt.',
         'nothing_updated'	=>  'Inga fält valdes, så ingenting uppdaterades.',
         'no_assets_selected'  =>  'Inga tillgångar valdes, så ingenting uppdaterades.',
+        'assets_do_not_exist_or_are_invalid' => 'Valda tillgångar kan inte uppdateras.',
     ],
 
     'restore' => [
@@ -50,6 +52,7 @@ return [
         'success'               => 'Din fil har importerats',
         'file_delete_success'   => 'Din fil har tagits bort',
         'file_delete_error'      => 'Filen kunde inte raderas',
+        'file_missing' => 'Den valda filen saknas',
         'header_row_has_malformed_characters' => 'Ett eller flera attribut i rubrikraden innehåller felaktigt formatterade UTF-8-tecken',
         'content_row_has_malformed_characters' => 'Ett eller flera attribut i den första raden av innehållet innehåller felaktigt formatterade UTF-8-tecken',
     ],

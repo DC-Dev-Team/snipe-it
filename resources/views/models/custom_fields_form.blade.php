@@ -9,7 +9,7 @@
               <!-- Listbox -->
               @if ($field->element=='listbox')
                    {{ Form::select($field->db_column_name(), $field->formatFieldValuesAsArray(),
-                  Request::old($field->db_column_name(),(isset($item) ? Helper::gracefulDecrypt($field, htmlspecialchars($item->{$field->db_column_name()}, ENT_QUOTES)) : $field->defaultValue($model->id))), ['class'=>'format select2 form-control']) }}
+                  Request::old($field->db_column_name(),(isset($item) ? Helper::gracefulDecrypt($field, $item->{$field->db_column_name()}) : $field->defaultValue($model->id))), ['class'=>'format select2 form-control']) }}
 
               @elseif ($field->element=='textarea')
                   <textarea class="col-md-6 form-control" id="{{ $field->db_column_name() }}" name="{{ $field->db_column_name() }}">{{ Request::old($field->db_column_name(),(isset($item) ? Helper::gracefulDecrypt($field, $item->{$field->db_column_name()}) : $field->defaultValue($model->id))) }}</textarea>
@@ -85,3 +85,12 @@
     </div>
   @endforeach
 @endif
+
+
+<script nonce="{{ csrf_token() }}">
+    // We have to re-call the tooltip since this is pulled in after the DOM has loaded
+    $('[data-tooltip="true"]').tooltip({
+        container: 'body',
+        animation: true,
+    });
+</script>

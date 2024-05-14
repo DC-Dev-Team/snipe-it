@@ -48,7 +48,10 @@ class LicenseSeat extends SnipeModel implements ICompanyableChild
      */
     public function requireAcceptance()
     {
-        return $this->license->category->require_acceptance;
+        if ($this->license && $this->license->category) {
+            return $this->license->category->require_acceptance;
+        }
+        return false;
     }
 
     public function getEula()
@@ -123,6 +126,7 @@ class LicenseSeat extends SnipeModel implements ICompanyableChild
     {
         return $query->leftJoin('users as license_seat_users', 'license_seats.assigned_to', '=', 'license_seat_users.id')
             ->leftJoin('departments as license_user_dept', 'license_user_dept.id', '=', 'license_seat_users.department_id')
+            ->whereNotNull('license_seats.assigned_to')
             ->orderBy('license_user_dept.name', $order);
     }
 }

@@ -90,11 +90,13 @@ return [
     ],
     'string'               => 'O :attribute deve ser string.',
     'timezone'             => 'O :attribute deve ser um campo válido.',
+    'two_column_unique_undeleted' => 'O :attribute deve ser único entre :table1 e :table2. ',
     'unique'               => 'O :attribute já foi tomado.',
     'uploaded'             => 'O :attribute falhou no upload.',
     'url'                  => 'O formato de :attribute é inválido.',
     'unique_undeleted'     => 'O :attribute deve ser único.',
     'non_circular'         => 'O :attribute não pode criar uma referência circular.',
+    'not_array'            => ':attribute não pode ser um array.',
     'disallow_same_pwd_as_user_fields' => 'A senha não pode ser igual ao nome de usuário.',
     'letters'              => 'A senha deve conter pelo menos uma letra.',
     'numbers'              => 'A senha deve conter pelo menos um número.',
@@ -103,6 +105,8 @@ return [
     'gte'                  => [
         'numeric'          => 'Valor não pode ser negativo'
     ],
+    'checkboxes'           => ':attribute contém opções inválidas.',
+    'radio_buttons'        => ':attribute é inválido.',
 
 
     /*
@@ -149,4 +153,10 @@ return [
 
     'attributes' => [],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Generic Validation Messages
+    |--------------------------------------------------------------------------
+    */
+    'invalid_value_in_field' => 'Valor inválido incluído neste campo',
 ];

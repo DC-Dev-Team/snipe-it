@@ -2,15 +2,13 @@
 
 namespace Tests\Feature\Api\Users;
 
+use App\Models\Company;
 use App\Models\User;
 use Laravel\Passport\Passport;
-use Tests\Support\InteractsWithSettings;
 use Tests\TestCase;
 
 class UsersSearchTest extends TestCase
 {
-    use InteractsWithSettings;
-
     public function testCanSearchByUserFirstAndLastName()
     {
         User::factory()->create(['first_name' => 'Luke', 'last_name' => 'Skywalker']);
@@ -81,6 +79,69 @@ class UsersSearchTest extends TestCase
         $this->assertTrue(
             $firstNames->contains('Deleted'),
             'Expected deleted user does not appear in results'
+        );
+    }
+
+    public function testUsersScopedToCompanyWhenMultipleFullCompanySupportEnabled()
+    {
+        $this->settings->enableMultipleFullCompanySupport();
+
+        $companyA = Company::factory()
+            ->has(User::factory(['first_name' => 'Company A', 'last_name' => 'User']))
+            ->create();
+
+        Company::factory()
+            ->has(User::factory(['first_name' => 'Company B', 'last_name' => 'User']))
+            ->create();
+
+        $response = $this->actingAsForApi(User::factory()->for($companyA)->viewUsers()->create())
+            ->getJson(route('api.users.index'))
+            ->assertOk();
+
+        $results = collect($response->json('rows'));
+
+        $this->assertTrue(
+            $results->pluck('name')->contains(fn($text) => str_contains($text, 'Company A')),
+            'User index does not contain expected user'
+        );
+        $this->assertFalse(
+            $results->pluck('name')->contains(fn($text) => str_contains($text, 'Company B')),
+            'User index contains unexpected user from another company'
+        );
+    }
+
+    public function testUsersScopedToCompanyDuringSearchWhenMultipleFullCompanySupportEnabled()
+    {
+        $this->settings->enableMultipleFullCompanySupport();
+
+        $companyA = Company::factory()
+            ->has(User::factory(['first_name' => 'Company A', 'last_name' => 'User']))
+            ->create();
+
+        Company::factory()
+            ->has(User::factory(['first_name' => 'Company B', 'last_name' => 'User']))
+            ->create();
+
+        $response = $this->actingAsForApi(User::factory()->for($companyA)->viewUsers()->create())
+            ->getJson(route('api.users.index', [
+                'deleted' => 'false',
+                'company_id' => null,
+                'search' => 'user',
+                'order' => 'asc',
+                'offset' => '0',
+                'limit' => '20',
+            ]))
+            ->assertOk();
+
+        $results = collect($response->json('rows'));
+
+        $this->assertTrue(
+            $results->pluck('name')->contains(fn($text) => str_contains($text, 'Company A')),
+            'User index does not contain expected user'
+        );
+        $this->assertFalse(
+            $results->pluck('name')->contains(fn($text) => str_contains($text, 'Company B')),
+            'User index contains unexpected user from another company'
         );
     }
 }

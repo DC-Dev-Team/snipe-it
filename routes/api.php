@@ -280,16 +280,8 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api', 'throttle:api']], functi
                 Api\ConsumablesController::class, 
                 'getDataView'
             ]
-        )->name('api.consumables.showUsers');
+        )->name('api.consumables.show.users');
 
-
-        // This is LEGACY endpoint URL and should be removed in the next major release
-        Route::get('view/{id}/users',
-              [
-                  Api\ConsumablesController::class,
-                  'getDataView'
-              ]
-        )->name('api.consumables.showUsers');
 
         Route::post('{consumable}/checkout',
             [
@@ -504,12 +496,26 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api', 'throttle:api']], functi
         )->name('api.assets.show.byserial')
         ->where('any', '.*');
 
-        Route::get('audit/{audit}',
+        // LEGACY URL - Get assets that are due or overdue for audit
+        Route::get('audit/{status}',
         [
             Api\AssetsController::class, 
             'index'
         ]
         )->name('api.asset.to-audit');
+
+
+
+        // This gets the "due or overdue" API endpoints for audits and checkins
+        Route::get('{action}/{upcoming_status}',
+              [
+                  Api\AssetsController::class,
+                  'index'
+              ]
+        )->name('api.assets.list-upcoming')
+        ->where(['action' => 'audits|checkins', 'upcoming_status' => 'due|overdue|due-or-overdue']);
+
+
 
         Route::post('audit',
         [
@@ -606,6 +612,16 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api', 'throttle:api']], functi
     ); // end imports API routes
 
 
+        /**
+         * Labels API routes
+         */
+        Route::group(['prefix' => 'labels'], function() {
+            Route::get('{name}', [ Api\LabelsController::class, 'show'])
+                ->where('name', '.*')
+                ->name('api.labels.show');
+            Route::get('', [ Api\LabelsController::class, 'index'])
+                ->name('api.labels.index');
+        });
 
         /**
          * Licenses API routes
@@ -704,6 +720,13 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api', 'throttle:api']], functi
                 ]
             )->name('api.manufacturers.selectlist');
 
+            Route::post('{id}/restore',
+                [
+                    Api\ManufacturersController::class,
+                    'restore'
+                ]
+            )->name('api.manufacturers.restore');
+
         }); 
     
         Route::resource('manufacturers', 
@@ -739,6 +762,13 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api', 'throttle:api']], functi
                     'assets'
                 ]
             )->name('api.models.assets');
+
+            Route::post('{id}/restore',
+                [
+                    Api\AssetModelsController::class,
+                    'restore'
+                ]
+            )->name('api.models.restore');
 
         }); 
     
@@ -811,6 +841,13 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api', 'throttle:api']], functi
                     'listBackups'
                 ]
             )->name('api.settings.backups.index');
+
+            Route::get('backups/download/latest',
+                [
+                    Api\SettingsController::class,
+                    'downloadLatestBackup'
+                ]
+            )->name('api.settings.backups.latest');
 
             Route::get('backups/download/{file}',
                 [

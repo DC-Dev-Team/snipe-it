@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Gate;
 use Laravel\Passport\HasApiTokens;
 use Watson\Validating\ValidatingTrait;
 
@@ -66,18 +67,16 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
         'gravatar',
         'vip',
         'autoassign_licenses',
+        'website',
     ];
 
     protected $casts = [
-        'activated'    => 'boolean',
         'manager_id'   => 'integer',
         'location_id'  => 'integer',
         'company_id'   => 'integer',
-        'vip'      => 'boolean',
         'created_at'   => 'datetime',
         'updated_at'   => 'datetime',
         'deleted_at'   => 'datetime',
-        'autoassign_licenses'    => 'boolean',
     ];
 
     /**
@@ -103,6 +102,9 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
         'state'                   => 'min:2|max:191|nullable',
         'country'                 => 'min:2|max:191|nullable',
         'zip'                     => 'max:10|nullable',
+        'vip'                     => 'boolean',
+        'remote'                  => 'boolean',
+        'activated'               => 'boolean',
     ];
 
     /**
@@ -119,6 +121,7 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
         'phone',
         'jobtitle',
         'employee_num',
+        'website',
     ];
 
     /**
@@ -201,6 +204,25 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
         return $this->checkPermissionSection('superuser');
     }
 
+    /**
+     * Checks if the user is deletable
+     *
+     * @author A. Gianotto <snipe@snipe.net>
+     * @since [v6.3.4]
+     * @return bool
+     */
+    public function isDeletable()
+    {
+        return Gate::allows('delete', $this)
+            && ($this->assets->count() === 0)
+            && ($this->licenses->count() === 0)
+            && ($this->consumables->count() === 0)
+            && ($this->accessories->count() === 0)
+            && ($this->managedLocations->count() === 0)
+            && ($this->managesUsers->count() === 0)
+            && ($this->deleted_at == '');
+    }
+
 
     /**
      * Establishes the user -> company relationship
@@ -247,21 +269,12 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
      */
     public function getFullNameAttribute()
     {
-        return $this->first_name.' '.$this->last_name;
-    }
+        $setting = Setting::getSettings();
 
-    /**
-     * Returns the complete name attribute with username
-     *
-     * @todo refactor this so it's less repetitive and dumb
-     *
-     * @author A. Gianotto <snipe@snipe.net>
-     * @since [v2.0]
-     * @return string
-     */
-    public function getCompleteNameAttribute()
-    {
-        return $this->last_name.', '.$this->first_name.' ('.$this->username.')';
+        if ($setting->name_display_format=='last_first') {
+            return ($this->last_name) ? $this->last_name.' '.$this->first_name : $this->first_name;
+        }
+        return $this->last_name ? $this->first_name.' '.$this->last_name : $this->first_name;
     }
 
 
@@ -326,7 +339,7 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
      */
     public function licenses()
     {
-        return $this->belongsToMany(\App\Models\License::class, 'license_seats', 'assigned_to', 'license_id')->withPivot('id');
+        return $this->belongsToMany(\App\Models\License::class, 'license_seats', 'assigned_to', 'license_id')->withPivot('id', 'created_at', 'updated_at');
     }
 
     /**
@@ -400,6 +413,19 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
     }
 
     /**
+     * Establishes the user -> managed users relationship
+     *
+     * @author A. Gianotto <snipe@snipe.net>
+     * @since [v6.4.1]
+     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     */
+    public function managesUsers()
+    {
+        return $this->hasMany(\App\Models\User::class, 'manager_id');
+    }
+
+
+    /**
      * Establishes the user -> managed locations relationship
      *
      * @author A. Gianotto <snipe@snipe.net>
@@ -463,6 +489,22 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
     public function checkoutRequests()
     {
         return $this->belongsToMany(Asset::class, 'checkout_requests', 'user_id', 'requestable_id')->whereNull('canceled_at');
+    }
+
+    /**
+     * Set a common string when the user has been imported/synced from:
+     *
+     * - LDAP without password syncing
+     * - SCIM
+     * - CSV import where no password was provided
+     *
+     * @author A. Gianotto <snipe@snipe.net>
+     * @since [v6.2.0]
+     * @return string
+     */
+    public function noPassword()
+    {
+        return "*** NO PASSWORD ***";
     }
 
 
@@ -758,5 +800,27 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
     public function preferredLocale()
     {
         return $this->locale;
+    }
+    public function getUserTotalCost(){
+        $asset_cost= 0;
+        $license_cost= 0;
+        $accessory_cost= 0;
+        foreach ($this->assets as $asset){
+            $asset_cost += $asset->purchase_cost;
+            $this->asset_cost = $asset_cost;
+        }
+        foreach ($this->licenses as $license){
+            $license_cost += $license->purchase_cost;
+            $this->license_cost = $license_cost;
+        }
+        foreach ($this->accessories as $accessory){
+            $accessory_cost += $accessory->purchase_cost;
+            $this->accessory_cost = $accessory_cost;
+        }
+
+        $this->total_user_cost = ($asset_cost + $accessory_cost + $license_cost);
+
+
+        return $this;
     }
 }

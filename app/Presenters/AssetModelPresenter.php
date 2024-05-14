@@ -35,6 +35,7 @@ class AssetModelPresenter extends Presenter
                 'field' => 'name',
                 'searchable' => true,
                 'sortable' => true,
+                'switchable' => false,
                 'visible' => true,
                 'title' => trans('general.name'),
                 'formatter' => 'modelsLinkFormatter',
@@ -63,6 +64,14 @@ class AssetModelPresenter extends Presenter
                 'sortable' => true,
                 'switchable' => true,
                 'title' => trans('admin/models/table.modelnumber'),
+                'visible' => true,
+            ],
+            [
+                'field' => 'min_amt',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('mail.min_QTY'),
                 'visible' => true,
             ],
             [
@@ -96,7 +105,7 @@ class AssetModelPresenter extends Presenter
                 'searchable' => false,
                 'sortable' => true,
                 'switchable' => true,
-                'title' => trans('general.eol'),
+                'title' => trans('admin/hardware/form.eol_rate'),
                 'visible' => true,
             ],
             [

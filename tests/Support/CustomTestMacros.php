@@ -24,7 +24,10 @@ trait CustomTestMacros
             function (Model $model, string $property = 'name') use ($guardAgainstNullProperty) {
                 $guardAgainstNullProperty($model, $property);
 
-                Assert::assertTrue(collect($this['rows'])->pluck($property)->contains($model->{$property}));
+                Assert::assertTrue(
+                    collect($this['rows'])->pluck($property)->contains(e($model->{$property})),
+                    "Response did not contain the expected value: {$model->{$property}}"
+                );
 
                 return $this;
             }
@@ -35,7 +38,10 @@ trait CustomTestMacros
             function (Model $model, string $property = 'name') use ($guardAgainstNullProperty) {
                 $guardAgainstNullProperty($model, $property);
 
-                Assert::assertFalse(collect($this['rows'])->pluck($property)->contains($model->{$property}));
+                Assert::assertFalse(
+                    collect($this['rows'])->pluck($property)->contains(e($model->{$property})),
+                    "Response contained unexpected value: {$model->{$property}}"
+                );
 
                 return $this;
             }
@@ -46,7 +52,10 @@ trait CustomTestMacros
             function (Model $model, string $property = 'id') use ($guardAgainstNullProperty) {
                 $guardAgainstNullProperty($model, $property);
 
-                Assert::assertTrue(collect($this->json('results'))->pluck('id')->contains($model->{$property}));
+                Assert::assertTrue(
+                    collect($this->json('results'))->pluck('id')->contains(e($model->{$property})),
+                    "Response did not contain the expected value: {$model->{$property}}"
+                );
 
                 return $this;
             }
@@ -57,7 +66,36 @@ trait CustomTestMacros
             function (Model $model, string $property = 'id') use ($guardAgainstNullProperty) {
                 $guardAgainstNullProperty($model, $property);
 
-                Assert::assertFalse(collect($this->json('results'))->pluck('id')->contains($model->{$property}));
+                Assert::assertFalse(
+                    collect($this->json('results'))->pluck('id')->contains(e($model->{$property})),
+                    "Response contained unexpected value: {$model->{$property}}"
+                );
+
+                return $this;
+            }
+        );
+
+        TestResponse::macro(
+            'assertStatusMessageIs',
+            function (string $message) {
+                Assert::assertEquals(
+                    $message,
+                    $this['status'],
+                    "Response status message was not {$message}"
+                );
+
+                return $this;
+            }
+        );
+
+        TestResponse::macro(
+            'assertMessagesAre',
+            function (string $message) {
+                Assert::assertEquals(
+                    $message,
+                    $this['messages'],
+                    "Response messages was not {$message}"
+                );
 
                 return $this;
             }

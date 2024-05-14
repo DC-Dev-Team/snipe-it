@@ -125,7 +125,10 @@
                     </div>
                     <div class="col-md-9">
                       @can('viewKeys', $license)
-                        {!! nl2br(e($license->serial)) !!}
+                        <span class="js-copy">{!! nl2br(e($license->serial)) !!}</span>
+                          <i class="fa-regular fa-clipboard js-copy-link" data-clipboard-target=".js-copy" aria-hidden="true" data-tooltip="true" data-placement="top" title="{{ trans('general.copy_to_clipboard') }}">
+                            <span class="sr-only">{{ trans('general.copy_to_clipboard') }}</span>
+                          </i>
                       @else
                         ------------
                       @endcan
@@ -171,19 +174,56 @@
                 @endif
 
 
-                @if ($license->supplier_id)
-                  <div class="row">
-                    <div class="col-md-3">
-                      <strong>
-                        {{ trans('general.supplier') }}
-                      </strong>
+                @if ($license->supplier)
+                    <div class="row">
+                      <div class="col-md-3">
+                        <strong>{{ trans('general.supplier') }}</strong>
+                      </div>
+                      <div class="col-md-9">
+                        @can('view', \App\Models\Supplier::class)
+                          <a href="{{ route('suppliers.show', $license->supplier->id) }}">
+                            {{ $license->supplier->name }}
+                          </a>
+                        @else
+                          {{ $license->supplier->name }}
+                        @endcan
+
+                          @if ($license->supplier->url)
+                            <br><i class="fas fa-globe-americas" aria-hidden="true"></i> <a href="{{ $license->supplier->url }}" rel="noopener">{{ $license->supplier->url }}</a>
+                          @endif
+
+                          @if ($license->supplier->phone)
+                            <br><i class="fas fa-phone" aria-hidden="true"></i>
+                            <a href="tel:{{ $license->supplier->phone }}">{{ $license->supplier->phone }}</a>
+                          @endif
+
+                          @if ($license->supplier->email)
+                            <br><i class="far fa-envelope" aria-hidden="true"></i> <a href="mailto:{{ $license->supplier->email }}">{{ $license->supplier->email }}</a>
+                          @endif
+
+                          @if ($license->supplier->address)
+                            <br>{{ $license->supplier->address }}
+                          @endif
+                          @if ($license->supplier->address2)
+                            <br>{{ $license->supplier->address2 }}
+                          @endif
+                          @if ($license->supplier->city)
+                            <br>{{ $license->supplier->city }},
+                          @endif
+                          @if ($license->supplier->state)
+                            {{ $license->supplier->state }}
+                          @endif
+                          @if ($license->supplier->country)
+                            {{ $license->supplier->country }}
+                          @endif
+                          @if ($license->supplier->zip)
+                            {{ $license->supplier->zip }}
+                          @endif
+                        
+                      </div>
                     </div>
-                    <div class="col-md-9">
-                      <a href="{{ route('suppliers.show', $license->supplier_id) }}">
-                        {{ $license->supplier->name }}
-                      </a>
-                    </div>
-                  </div>
+                @else
+                    {{ trans('general.deleted') }}
                 @endif
 
 
@@ -330,11 +370,21 @@
                       </strong>
                     </div>
                     <div class="col-md-9">
+
+                      @if ($license->remaincount()  <= ($license->min_amt - \App\Models\Setting::getSettings()->alert_threshold))
+                        <span data-tooltip="true" title="{{ trans('admin/licenses/general.below_threshold', ['remaining_count' => $license->remaincount(), 'min_amt' => $license->min_amt]) }}"><i class="fas fa-exclamation-triangle text-danger" aria-hidden="true"></i>
+                        <span class="sr-only">{{ trans('general.warning') }}</span>
+                        </span>
+                      @endif
+
                       {{ $license->seats }}
+                        @if ($license->remaincount()  <= ($license->min_amt - \App\Models\Setting::getSettings()->alert_threshold))
+
+                        @endif
+
                     </div>
                   </div>
                   @endif
-
 
 
                   <div class="row">
@@ -474,10 +524,15 @@
                 </td>
                 <td>
                   @if ($file->filename)
-                    <a href="{{ route('show.licensefile', [$license->id, $file->id, 'download' => 'true']) }}" class="btn btn-default">
+                    <a href="{{ route('show.licensefile', [$license->id, $file->id]) }}" class="btn btn-sm btn-default">
                       <i class="fas fa-download" aria-hidden="true"></i>
                       <span class="sr-only">{{ trans('general.download') }}</span>
                     </a>
+
+                    <a href="{{ route('show.licensefile', [$license->id, $file->id, 'inline' => 'true']) }}" class="btn btn-sm btn-default" target="_blank">
+                      <i class="fa fa-external-link" aria-hidden="true"></i>
+                    </a>
+
                   @endif
                 </td>
                 <td>{{ $file->created_at }}</td>
@@ -526,6 +581,7 @@
                   <th class="col-sm-2" data-visible="false" data-sortable="true" data-field="created_at" data-formatter="dateDisplayFormatter">{{ trans('general.record_created') }}</th>
                   <th class="col-sm-2"data-visible="true" data-sortable="true" data-field="admin" data-formatter="usersLinkObjFormatter">{{ trans('general.admin') }}</th>
                   <th class="col-sm-2" data-sortable="true"  data-visible="true" data-field="action_type">{{ trans('general.action') }}</th>
+                  <th class="col-sm-2" data-field="file" data-visible="false" data-formatter="fileUploadNameFormatter">{{ trans('general.file_name') }}</th>
                   <th class="col-sm-2" data-sortable="true"  data-visible="true" data-field="item" data-formatter="polymorphicItemFormatter">{{ trans('general.item') }}</th>
                   <th class="col-sm-2" data-visible="true" data-field="target" data-formatter="polymorphicItemFormatter">{{ trans('general.target') }}</th>
                   <th class="col-sm-2" data-sortable="true" data-visible="true" data-field="note">{{ trans('general.notes') }}</th>
@@ -577,17 +633,23 @@
     @endcan
 
     @can('checkin', $license)
-
-      @if (($license->seats - $license->availCount()->count()) > 0 )
-        <a href="#" class="btn btn-block bg-purple" style="margin-bottom: 25px;" data-toggle="modal" data-tooltip="true"  data-target="#checkinFromAllModal" data-content="{{ trans('general.sure_to_delete') }} data-title="{{  trans('general.delete') }}" onClick="return false;">
-          {{ trans('admin/licenses/general.bulk.checkin_all.button') }}
-        </a>
-      @else
+  
+      @if (($license->seats - $license->availCount()->count()) <= 0 )
         <span data-tooltip="true" title=" {{ trans('admin/licenses/general.bulk.checkin_all.disabled_tooltip') }}">
             <a href="#" class="btn btn-block bg-purple disabled" style="margin-bottom: 25px;">
              {{ trans('admin/licenses/general.bulk.checkin_all.button') }}
             </a>
-          </span>
+        </span>
+      @elseif (! $license->reassignable)
+        <span data-tooltip="true" title=" {{ trans('admin/licenses/general.bulk.checkin_all.disabled_tooltip_reassignable') }}">
+            <a href="#" class="btn btn-block bg-purple disabled" style="margin-bottom: 25px;">
+             {{ trans('admin/licenses/general.bulk.checkin_all.button') }}
+            </a>
+        </span>
+      @else
+        <a href="#" class="btn btn-block bg-purple" style="margin-bottom: 25px;" data-toggle="modal" data-tooltip="true"  data-target="#checkinFromAllModal" data-content="{{ trans('general.sure_to_delete') }} data-title="{{  trans('general.delete') }}" onClick="return false;">
+          {{ trans('admin/licenses/general.bulk.checkin_all.button') }}
+        </a>
       @endif
     @endcan
 

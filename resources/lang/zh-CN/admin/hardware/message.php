@@ -10,6 +10,7 @@ return [
     'create' => [
         'error'   		=> '资产创建失败，请重试。:(',
         'success' 		=> '资产创建成功。 :)',
+        'success_linked' => '带有 :tag 标签的资产已成功创建。<strong><a href=":link" style="color: white;">点击此处查看</a></strong>。',
     ],
 
     'update' => [
@@ -17,6 +18,7 @@ return [
         'success' 			=> '资产更新成功。',
         'nothing_updated'	=>  '一个也没有选，所以什么也不会更新。',
         'no_assets_selected'  =>  '没有选择任何资产，因此没有更新任何内容。',
+        'assets_do_not_exist_or_are_invalid' => '无法更新选定的资产。',
     ],
 
     'restore' => [
@@ -50,6 +52,7 @@ return [
         'success'               => '您的文件已被导入',
         'file_delete_success'   => '您的文件已成功删除',
         'file_delete_error'      => '该文件无法被删除',
+        'file_missing' => '所选文件丢失',
         'header_row_has_malformed_characters' => '标题行中的一个或多个属性包含格式错误的 UTF-8 字符',
         'content_row_has_malformed_characters' => '第一行内容中的一个或多个属性包含格式错误的 UTF-8 字符',
     ],

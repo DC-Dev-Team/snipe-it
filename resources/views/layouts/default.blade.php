@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}"
+dir="{{ in_array(app()->getLocale(),['ar-SA','fa-IR', 'he-IL']) ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -140,17 +141,15 @@
                     <div class="navbar-custom-menu">
                         <ul class="nav navbar-nav">
                             @can('index', \App\Models\Asset::class)
-                                <li aria-hidden="true"
-                                    {!! (Request::is('hardware*') ? ' class="active"' : '') !!} tabindex="-1">
+                                <li aria-hidden="true"{!! (Request::is('hardware*') ? ' class="active"' : '') !!}>
                                     <a href="{{ url('hardware') }}" accesskey="1" tabindex="-1">
-                                        <i class="fas fa-barcode fa-fw" aria-hidden="true"></i>
+                                        <i class="fas fa-barcode fa-fw"></i>
                                         <span class="sr-only">{{ trans('general.assets') }}</span>
                                     </a>
                                 </li>
                             @endcan
                             @can('view', \App\Models\License::class)
-                                <li aria-hidden="true"
-                                    {!! (Request::is('licenses*') ? ' class="active"' : '') !!} tabindex="-1">
+                                <li aria-hidden="true"{!! (Request::is('licenses*') ? ' class="active"' : '') !!}>
                                     <a href="{{ route('licenses.index') }}" accesskey="2" tabindex="-1">
                                         <i class="far fa-save fa-fw"></i>
                                         <span class="sr-only">{{ trans('general.licenses') }}</span>
@@ -158,8 +157,7 @@
                                 </li>
                             @endcan
                             @can('index', \App\Models\Accessory::class)
-                                <li aria-hidden="true"
-                                    {!! (Request::is('accessories*') ? ' class="active"' : '') !!} tabindex="-1">
+                                <li aria-hidden="true"{!! (Request::is('accessories*') ? ' class="active"' : '') !!}>
                                     <a href="{{ route('accessories.index') }}" accesskey="3" tabindex="-1">
                                         <i class="far fa-keyboard fa-fw"></i>
                                         <span class="sr-only">{{ trans('general.accessories') }}</span>
@@ -233,7 +231,8 @@
                                             <li {!! (Request::is('accessories/create') ? 'class="active"' : '') !!}>
                                                 <a href="{{ route('accessories.create') }}" tabindex="-1">
                                                     <i class="far fa-keyboard fa-fw" aria-hidden="true"></i>
-                                                    {{ trans('general.accessory') }}</a>
+                                                    {{ trans('general.accessory') }}
+                                                </a>
                                             </li>
                                         @endcan
                                         @can('create', \App\Models\Consumable::class)
@@ -328,7 +327,7 @@
                                             <i class="fas fa-users" aria-hidden="true"></i>
                                         @endif
 
-                                        <span class="hidden-xs">{{ Auth::user()->first_name }} <strong
+                                        <span class="hidden-xs">{{ Auth::user()->getFullNameAttribute() }} <strong
                                                     class="caret"></strong></span>
                                     </a>
                                     <ul class="dropdown-menu">
@@ -376,7 +375,7 @@
                                                 </a>
                                             </li>
                                         @endcan
-                                        <li class="divider"></li>
+                                        <li class="divider" style="margin-top: -1px; margin-bottom: -1px"></li>
                                         <li>
 
                                             <a href="{{ route('logout.get') }}"
@@ -439,6 +438,9 @@
                                         <a href="{{ url('hardware') }}">
                                             <i class="far fa-circle text-grey fa-fw" aria-hidden="true"></i>
                                             {{ trans('general.list_all') }}
+                                            <span class="badge">
+                                                {{ (isset($total_assets)) ? $total_assets : '' }}
+                                            </span>
                                         </a>
                                     </li>
 
@@ -449,7 +451,8 @@
                                                 <a href="{{ route('statuslabels.show', ['statuslabel' => $status_nav->id]) }}">
                                                     <i class="fas fa-circle text-grey fa-fw"
                                                        aria-hidden="true"{!!  ($status_nav->color!='' ? ' style="color: '.e($status_nav->color).'"' : '') !!}></i>
-                                                    {{ $status_nav->name }} ({{ $status_nav->asset_count }})</a></li>
+                                                    {{ $status_nav->name }}
+                                                    <span class="badge badge-secondary">{{ $status_nav->asset_count }}</span></a></li>
                                         @endforeach
                                     @endif
 
@@ -457,49 +460,43 @@
                                     <li{!! (Request::query('status') == 'Deployed' ? ' class="active"' : '') !!}>
                                         <a href="{{ url('hardware?status=Deployed') }}">
                                             <i class="far fa-circle text-blue fa-fw"></i>
-                                            {{ trans('general.all') }}
                                             {{ trans('general.deployed') }}
-                                            ({{ (isset($total_deployed_sidebar)) ? $total_deployed_sidebar : '' }})
+                                            <span class="badge">{{ (isset($total_deployed_sidebar)) ? $total_deployed_sidebar : '' }}</span>
                                         </a>
                                     </li>
                                     <li{!! (Request::query('status') == 'RTD' ? ' class="active"' : '') !!}>
                                         <a href="{{ url('hardware?status=RTD') }}">
                                             <i class="far fa-circle text-green fa-fw"></i>
-                                            {{ trans('general.all') }}
                                             {{ trans('general.ready_to_deploy') }}
-                                            ({{ (isset($total_rtd_sidebar)) ? $total_rtd_sidebar : '' }})
+                                            <span class="badge">{{ (isset($total_rtd_sidebar)) ? $total_rtd_sidebar : '' }}</span>
                                         </a>
                                     </li>
                                     <li{!! (Request::query('status') == 'Pending' ? ' class="active"' : '') !!}><a
                                                 href="{{ url('hardware?status=Pending') }}"><i
                                                     class="far fa-circle text-orange fa-fw"></i>
-                                            {{ trans('general.all') }}
                                             {{ trans('general.pending') }}
-                                            ({{ (isset($total_pending_sidebar)) ? $total_pending_sidebar : '' }})
+                                            <span class="badge">{{ (isset($total_pending_sidebar)) ? $total_pending_sidebar : '' }}</span>
                                         </a>
                                     </li>
                                     <li{!! (Request::query('status') == 'Undeployable' ? ' class="active"' : '') !!} ><a
                                                 href="{{ url('hardware?status=Undeployable') }}"><i
                                                     class="fas fa-times text-red fa-fw"></i>
-                                            {{ trans('general.all') }}
                                             {{ trans('general.undeployable') }}
-                                            ({{ (isset($total_undeployable_sidebar)) ? $total_undeployable_sidebar : '' }})
+                                            <span class="badge">{{ (isset($total_undeployable_sidebar)) ? $total_undeployable_sidebar : '' }}</span>
                                         </a>
                                     </li>
                                     <li{!! (Request::query('status') == 'byod' ? ' class="active"' : '') !!}><a
                                                 href="{{ url('hardware?status=byod') }}"><i
                                                     class="fas fa-times text-red fa-fw"></i>
-                                            {{ trans('general.all') }}
                                             {{ trans('general.byod') }}
-                                            ({{ (isset($total_byod_sidebar)) ? $total_byod_sidebar : '' }})
+                                            <span class="badge">{{ (isset($total_byod_sidebar)) ? $total_byod_sidebar : '' }}</span>
                                         </a>
                                     </li>
                                     <li{!! (Request::query('status') == 'Archived' ? ' class="active"' : '') !!}><a
                                                 href="{{ url('hardware?status=Archived') }}"><i
                                                     class="fas fa-times text-red fa-fw"></i>
-                                            {{ trans('general.all') }}
                                             {{ trans('admin/hardware/general.archived') }}
-                                            ({{ (isset($total_archived_sidebar)) ? $total_archived_sidebar : '' }})
+                                            <span class="badge">{{ (isset($total_archived_sidebar)) ? $total_archived_sidebar : '' }}</span>
                                         </a>
                                     </li>
                                     <li{!! (Request::query('status') == 'Requestable' ? ' class="active"' : '') !!}><a
@@ -513,13 +510,18 @@
                                         <li{!! (Request::is('hardware/audit/due') ? ' class="active"' : '') !!}>
                                             <a href="{{ route('assets.audit.due') }}">
                                                 <i class="fas fa-history text-yellow fa-fw"></i> {{ trans('general.audit_due') }}
+                                                <span class="badge">{{ (isset($total_due_and_overdue_for_audit)) ? $total_due_and_overdue_for_audit : '' }}</span>
                                             </a>
                                         </li>
-                                        <li{!! (Request::is('hardware/audit/overdue') ? ' class="active"' : '') !!}>
-                                            <a href="{{ route('assets.audit.overdue') }}">
-                                                <i class="fas fa-exclamation-triangle text-red fa-fw"></i> {{ trans('general.audit_overdue') }}
-                                            </a>
-                                        </li>
+                                    @endcan
+
+                                    @can('checkin', \App\Models\Asset::class)
+                                    <li{!! (Request::is('hardware/checkins/due') ? ' class="active"' : '') !!}>
+                                        <a href="{{ route('assets.checkins.due') }}">
+                                            <i class="fas fa-history text-yellow fa-fw"></i> {{ trans('general.checkin_due') }}
+                                            <span class="badge">{{ (isset($total_due_and_overdue_for_checkin)) ? $total_due_and_overdue_for_checkin : '' }}</span>
+                                        </a>
+                                    </li>
                                     @endcan
 
                                     <li class="divider">&nbsp;</li>
@@ -624,7 +626,7 @@
                         @can('import')
                             <li{!! (Request::is('import/*') ? ' class="active"' : '') !!}>
                                 <a href="{{ route('imports.index') }}">
-                                    <i class="fas fa-cloud-download-alt fa-fw" aria-hidden="true"></i>
+                                    <i class="fas fa-cloud-upload-alt fa-fw" aria-hidden="true"></i>
                                     <span>{{ trans('general.import') }}</span>
                                 </a>
                             </li>
@@ -849,9 +851,15 @@
                 </section>
 
             </div><!-- /.content-wrapper -->
-            <footer class="main-footer hidden-print">
+            <footer class="main-footer hidden-print" style="display:grid;flex-direction:column;">
 
-                <div class="pull-right hidden-xs">
+                <div class="1hidden-xs pull-left">
+                    <div class="pull-left" >
+                        <a target="_blank" href="https://snipeitapp.com" rel="noopener">Snipe-IT</a> is open source software,
+                        made with <i class="fas fa-heart" style="color: #a94442; font-size: 10px" aria-hidden="true"></i><span
+                                class="sr-only">love</span> by <a href="https://twitter.com/snipeitapp" rel="noopener">@snipeitapp</a>.
+                    </div>
+                    <div class="pull-right">
                     @if ($snipeSettings->version_footer!='off')
                         @if (($snipeSettings->version_footer=='on') || (($snipeSettings->version_footer=='admin') && (Auth::user()->isSuperUser()=='1')))
                             &nbsp; <strong>Version</strong> {{ config('version.app_version') }} -
@@ -874,23 +882,15 @@
                            href="{{  $snipeSettings->privacy_policy_link }}"
                            target="_new">{{ trans('admin/settings/general.privacy_policy') }}</a>
                     @endif
-
-
-                </div>
-                @if ($snipeSettings->footer_text!='')
-                    <div class="pull-right">
-                        {!!  Helper::parseEscapedMarkedown($snipeSettings->footer_text)  !!}
                     </div>
-                @endif
-
-
-                <a target="_blank" href="https://snipeitapp.com" rel="noopener">Snipe-IT</a> is open source software,
-                made with <i class="fas fa-heart" style="color: #a94442; font-size: 10px" aria-hidden="true"></i><span
-                        class="sr-only">love</span> by <a href="https://twitter.com/snipeitapp" rel="noopener">@snipeitapp</a>.
+                    <br>
+                    @if ($snipeSettings->footer_text!='')
+                        <div class="pull-left">
+                            {!!  Helper::parseEscapedMarkedown($snipeSettings->footer_text)  !!}
+                        </div>
+                    @endif
+                </div>
             </footer>
-
-
-
         </div><!-- ./wrapper -->
 
 
@@ -947,6 +947,7 @@
 
         {{-- Javascript files --}}
         <script src="{{ url(mix('js/dist/all.js')) }}" nonce="{{ csrf_token() }}"></script>
+        <script defer src="{{ url(mix('js/dist/all-defer.js')) }}" nonce="{{ csrf_token() }}"></script>
 
         <!-- v5-beta: This pGenerator call must remain here for v5 - until fixed - so that the JS password generator works for the user create modal. -->
         <script src="{{ url('js/pGenerator.jquery.js') }}"></script>
@@ -960,6 +961,16 @@
 
         <script nonce="{{ csrf_token() }}">
 
+            var clipboard = new ClipboardJS('.js-copy-link');
+
+            clipboard.on('success', function(e) {
+                // Get the clicked element
+                var clickedElement = $(e.trigger);
+                // Get the target element selector from data attribute
+                var targetSelector = clickedElement.data('data-clipboard-target');
+                // Show the alert that the content was copied
+                clickedElement.tooltip('hide').attr('data-original-title', '{{ trans('general.copied') }}').tooltip('show');
+            });
 
             // ignore: 'input[type=hidden]' is required here to validate the select2 lists
             $.validate({
@@ -971,9 +982,31 @@
             });
 
 
+            function showHideEncValue(e) {
+                // Use element id to find the text element to hide / show
+                var targetElement = e.id+"-to-show";
+                var hiddenElement = e.id+"-to-hide";
+                if($(e).hasClass('fa-lock')) {
+                    $(e).removeClass('fa-lock').addClass('fa-unlock');
+                    // Show the encrypted custom value and hide the element with asterisks
+                    document.getElementById(targetElement).style.fontSize = "100%";
+                    document.getElementById(hiddenElement).style.display = "none";
+                } else {
+                    $(e).removeClass('fa-unlock').addClass('fa-lock');
+                    // ClipboardJS can't copy display:none elements so use a trick to hide the value
+                    document.getElementById(targetElement).style.fontSize = "0px";
+                    document.getElementById(hiddenElement).style.display = "";
+                 }
+             }
+
             $(function () {
 
-                $('[data-tooltip="true"]').tooltip();
+                // Invoke Bootstrap 3's tooltip
+                $('[data-tooltip="true"]').tooltip({
+                    container: 'body',
+                    animation: true,
+                });
+
                 $('[data-toggle="popover"]').popover();
                 $('.select2 span').addClass('needsclick');
                 $('.select2 span').removeAttr('title');
@@ -1003,6 +1036,72 @@
                 event.preventDefault();
                 $(this).ekkoLightbox();
             });
+            //This prevents multi-click checkouts for accessories, components, consumables
+            $(document).ready(function () {
+                $('#checkout_form').submit(function (event) {
+                    event.preventDefault();
+                    $('#submit_button').prop('disabled', true);
+                    this.submit();
+                });
+            });
+
+            // Select encrypted custom fields to hide them in the asset list
+            $(document).ready(function() {
+                // Selector for elements with css-padlock class
+                var selector = 'td.css-padlock';
+
+                // Function to add original value to elements
+                function addValue($element) {
+                    // Get original value of the element
+                    var originalValue = $element.text().trim();
+
+                    // Show asterisks only for not empty values
+                    if (originalValue !== '') {
+                        // This is necessary to avoid loop because value is generated dynamically
+                        if (originalValue !== '' && originalValue !== asterisks) $element.attr('value', originalValue);
+
+                        // Hide the original value and show asterisks of the same length
+                        var asterisks = '*'.repeat(originalValue.length);
+                        $element.text(asterisks);
+
+                        // Add click event to show original text
+                        $element.click(function() {
+                            var $this = $(this);
+                            if ($this.text().trim() === asterisks) {
+                                $this.text($this.attr('value'));
+                            } else {
+                                $this.text(asterisks);
+                            }
+                        });
+                    }
+                }
+                // Add value to existing elements
+                $(selector).each(function() {
+                    addValue($(this));
+                });
+
+                // Function to handle mutations in the DOM because content is generated dynamically
+                var observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        // Check if new nodes have been inserted
+                        if (mutation.type === 'childList') {
+                            mutation.addedNodes.forEach(function(node) {
+                                if ($(node).is(selector)) {
+                                    addValue($(node));
+                                } else {
+                                    $(node).find(selector).each(function() {
+                                        addValue($(this));
+                                    });
+                                }
+                            });
+                        }
+                    });
+                });
+
+                // Configure the observer to observe changes in the DOM
+                var config = { childList: true, subtree: true };
+                observer.observe(document.body, config);
+            });
 
 
         </script>
@@ -1016,7 +1115,6 @@
         @include('partials.bpay')
 
         @livewireScripts
-
 
         </body>
 </html>

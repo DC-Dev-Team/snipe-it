@@ -4,8 +4,9 @@
 {{-- Page content --}}
 @section('content')
 
-    <form role="form" action="{{ url('/login') }}" method="POST" autocomplete="false">
+    <form role="form" action="{{ url('/login') }}" method="POST" autocomplete="{{ (config('auth.login_autocomplete') === true) ? 'on' : 'off'  }}">
         <input type="hidden" name="_token" value="{{ csrf_token() }}" />
+
 
         <!-- this is a hack to prevent Chrome from trying to autocomplete fields -->
         <input type="text" name="prevent_autofill" id="prevent_autofill" value="" style="display:none;" aria-hidden="true">
@@ -15,6 +16,18 @@
             <div class="row">
 
                 <div class="col-md-4 col-md-offset-4">
+
+                    @if (($snipeSettings->google_login=='1') && ($snipeSettings->google_client_id!='') && ($snipeSettings->google_client_secret!=''))
+
+                        <br><br>
+                        <a href="{{ route('google.redirect')  }}" class="btn btn-block btn-social btn-google btn-lg">
+                            <i class="fa-brands fa-google"></i>
+                            {{ trans('auth/general.google_login') }}
+                        </a>
+
+                        <div class="separator">{{ strtoupper(trans('general.or')) }}</div>
+                    @endif
+
 
                     <div class="box login-box">
                         <div class="box-header with-border">
@@ -45,12 +58,12 @@
 
                                         <div class="form-group{{ $errors->has('username') ? ' has-error' : '' }}">
                                             <label for="username"><i class="fas fa-user" aria-hidden="true"></i> {{ trans('admin/users/table.username')  }}</label>
-                                            <input class="form-control" placeholder="{{ trans('admin/users/table.username')  }}" name="username" type="text" id="username" autocomplete="off" autofocus>
+                                            <input class="form-control" placeholder="{{ trans('admin/users/table.username')  }}" name="username" type="text" id="username" autocomplete="{{ (config('auth.login_autocomplete') === true) ? 'on' : 'off'  }}" autofocus>
                                             {!! $errors->first('username', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
                                         </div>
                                         <div class="form-group{{ $errors->has('password') ? ' has-error' : '' }}">
                                             <label for="password"><i class="fa fa-key" aria-hidden="true"></i> {{ trans('admin/users/table.password')  }}</label>
-                                            <input class="form-control" placeholder="{{ trans('admin/users/table.password')  }}" name="password" type="password" id="password" autocomplete="off">
+                                            <input class="form-control" placeholder="{{ trans('admin/users/table.password')  }}" name="password" type="password" id="password" autocomplete="{{ (config('auth.login_autocomplete') === true) ? 'on' : 'off'  }}">
                                             {!! $errors->first('password', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
                                         </div>
                                         <div class="form-group{{ $errors->has('password') ? ' has-error' : '' }}">
@@ -92,12 +105,6 @@
 
                     </div> <!-- end login box -->
 
-                    @if (($snipeSettings->google_login=='1') && ($snipeSettings->google_client_id!='') && ($snipeSettings->google_client_secret!=''))
-
-                        <a href="{{ route('google.redirect')  }}" class="btn btn-block btn-social btn-google">
-                            <i class="fa-brands fa-google"></i> {{ trans('auth/general.google_login') }}
-                        </a>
-                    @endif
 
                 </div> <!-- col-md-4 -->
 

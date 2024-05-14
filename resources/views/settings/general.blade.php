@@ -14,11 +14,7 @@
 {{-- Page content --}}
 @section('content')
 
-    <style>
-        .checkbox label {
-            padding-right: 40px;
-        }
-    </style>
+
 
 
 
@@ -132,6 +128,25 @@
                            </div>
                        </div>
 
+                       <!-- Load gravatar -->
+                       <div class="form-group {{ $errors->has('load_remote') ? 'error' : '' }}">
+                           <div class="col-md-3">
+                               <strong>{{ trans('admin/settings/general.load_remote') }}</strong>
+                           </div>
+                           <div class="col-md-9">
+                               <label class="form-control">
+                                   {{ Form::checkbox('load_remote', '1', old('load_remote', $setting->load_remote)) }}
+                                   {{ trans('general.yes') }}
+                                   {!! $errors->first('load_remote', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+                               </label>
+
+                               <p class="help-block">
+                                   {{ trans('admin/settings/general.load_remote_help_text') }}
+                               </p>
+
+                           </div>
+                       </div>
+
                        <!-- unique serial -->
                        <div class="form-group">
                            <div class="col-md-3">
@@ -141,8 +156,9 @@
                                <label class="form-control">
                                    {{ Form::checkbox('unique_serial', '1', Request::old('unique_serial', $setting->unique_serial),array('class' => 'minimal')) }}
                                    {{ trans('general.yes') }}
+                                   {!! $errors->first('unique_serial', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
                                </label>
-                               {!! $errors->first('unique_serial', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+
                                <p class="help-block">
                                {{ trans('admin/settings/general.unique_serial_help_text') }}
                                </p>
@@ -260,11 +276,13 @@
                                               trans('admin/settings/general.show_archived_in_list')) }}
                            </div>
                            <div class="col-md-9">
-                               {{ Form::checkbox('show_archived_in_list', '1', Request::old('show_archived_in_list', $setting->show_archived_in_list),array('class' => 'minimal')) }}
-                               {{ trans('admin/settings/general.show_archived_in_list_text') }}
-                               {!! $errors->first('show_archived_in_list', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
 
-                           </div>
+                                   <label class="form-control">
+                                       {{ Form::checkbox('show_archived_in_list', '1', old('show_archived_in_list', $setting->show_archived_in_list),array('aria-label'=>'show_archived_in_list')) }}
+                                       {{ trans('admin/settings/general.show_archived_in_list_text') }}
+                                   </label>
+                                   {!! $errors->first('show_archived_in_list', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+                          </div>
                        </div>
 
                        <!-- Show assets assigned to user's assets -->
@@ -274,8 +292,10 @@
                                               trans('admin/settings/general.show_assigned_assets')) }}
                            </div>
                            <div class="col-md-9">
+                               <label class="form-control">
                                {{ Form::checkbox('show_assigned_assets', '1', Request::old('show_assigned_assets', $setting->show_assigned_assets),array('class' => 'minimal')) }}
                                {{ trans('general.yes') }}
+                               </label>
                                <p class="help-block">{{ trans('admin/settings/general.show_assigned_assets_help') }}</p>
                                {!! $errors->first('show_assigned_assets', '<span class="alert-msg">:message</span>') !!}
                            </div>
